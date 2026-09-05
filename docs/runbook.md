@@ -86,11 +86,27 @@ If it *is* on AC and still went to sleep, at the keyboard check what logind
 thinks it is doing:
 
 ```sh
-systemctl show systemd-logind -p HandleLidSwitch \
-  -p HandleLidSwitchExternalPower -p IdleAction
+busctl get-property org.freedesktop.login1 /org/freedesktop/login1 \
+  org.freedesktop.login1.Manager HandleLidSwitchExternalPower
 ```
 
-Expect `ignore` for the ExternalPower one. If it still says `suspend`, the
+Expect `s "ignore"`. These are logind's own D-Bus properties, not systemd
+unit properties -- `systemctl show systemd-logind -p HandleLidSwitch` returns
+nothing at all, whatever the config says, which makes it a misleading check.
+
+An **empty string** means the key is unset and logind falls back to
+`HandleLidSwitch` (i.e. suspend). That is what you see when the drop-in is on
+disk but logind has not been restarted to read it.
+
+The other three, if you want the full picture:
+
+```sh
+for p in HandleLidSwitch HandleLidSwitchExternalPower HandleLidSwitchDocked IdleAction; do
+  printf '%-30s ' "$p"
+  busctl get-property org.freedesktop.login1 /org/freedesktop/login1 \
+    org.freedesktop.login1.Manager "$p"
+done
+``` If it still says `suspend`, the
 drop-in is installed but not loaded — logind has no `ExecReload`, so it needs
 `sudo systemctl restart systemd-logind` or a reboot.
 
@@ -272,10 +288,20 @@ because `daemon-reload` loads it but only a *start* applies it:
 
 ```sh
 systemctl cat sshd | grep -A2 StartLimitIntervalSec
-systemctl show sshd -p StartLimitIntervalSec -p RestartSec -p After
+systemctl show sshd -p StartLimitIntervalUSec -p RestartUSec -p After
 ```
 
-`StartLimitIntervalSec=0` and `RestartSec=10s` mean you are covered.
+Note the property names: `systemctl show` reports these in microseconds and
+under different names from the ones you write in the unit file. Asking for
+`-p StartLimitIntervalSec` or `-p RestartSec` silently returns nothing, which
+reads exactly like "the override is not loaded" when in fact it is fine.
+
+```
+StartLimitIntervalUSec=0
+RestartUSec=10s
+```
+
+means you are covered.
 
 ---
 
