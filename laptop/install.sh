@@ -192,7 +192,7 @@ sed -e "s|__TAILSCALE_IPV4__|${TS4}|g" \
     -e "s|__TAILSCALE_IPV6__|${TS6}|g" \
     "$SSHD_SRC" > "$RENDERED"
 
-if grep -q '__TAILSCALE_' "$RENDERED"; then
+if grep -qE '__TAILSCALE_IPV[46]__' "$RENDERED"; then
   die "unsubstituted placeholder left in rendered config"
 fi
 ok "rendered ${SSHD_SRC##*/} with the live tailnet addresses"
