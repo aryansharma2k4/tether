@@ -1,0 +1,23 @@
+# Rendered artifacts: install.sh substitutes the tailnet address into the
+# sshd drop-in at install time. The result is host-specific -- never commit it.
+*.rendered
+*.rendered.conf
+
+# Keys and key-shaped things. Nothing in this repo should ever contain one.
+id_*
+*.pem
+*.key
+authorized_keys
+known_hosts
+
+# Local scratch
+*.local
+*.log
+.env
+
+# Editor / OS cruft
+*~
+*.swp
+.DS_Store
+.idea/
+.vscode/
